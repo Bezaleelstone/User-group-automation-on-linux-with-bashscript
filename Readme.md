@@ -66,6 +66,7 @@ generate_password() {
 
 i. **User Processing:** This block carries out a number of actions as follows-
 * **Read Input File:** The script uses IFS=';' to read each line from the input file, splitting it into username and groups using the  read -r command.
+* **Create Personal group for users:** Here a personal group for users is being created. This group wasn't included in the txt file.
 * **Create Users:** If the user does not already exist (`id "$username"`), the script creates the user along with a personal group (`-g "$username"`) and sets up the home directory with appropriate permissions.
 * **Password Management**: The script calls the `generate_password()` function which generates a random password, assigns it to the user, and stores it securely.
 
@@ -76,9 +77,22 @@ while IFS=';' read -r username groups; do
     log "User $username already exists."
   else
 
-    # Create the user with a home directory and a personal group
+    # Create a personal group for the user
+    if getent group "$username" &>/dev/null; then
+      log "Group $username already exists."
+    else
+      sudo groupadd "$username"
+      log "Personal group $username created."
+    fi
+
+    # Create the user with a home directory
     sudo useradd -m -g "$username" "$username"
-    log "User $username and personal group $username created."
+    if [ $? -eq 0 ]; then
+      log "User $username created."
+    else
+      log "Failed to create user $username."
+      continue
+    fi
 
     # Set up home directory with appropriate permissions
     sudo chmod 700 "/home/$username"
@@ -88,7 +102,12 @@ while IFS=';' read -r username groups; do
     # Generate a random password and set it for the user
     password=$(generate_password)
     echo "$username:$password" | sudo chpasswd
-    log "Password for $username set."
+    if [ $? -eq 0 ]; then
+      log "Password for $username set."
+    else
+      log "Failed to set password for $username."
+      continue
+    fi
     
     # Store the password securely
     echo "$username:$password" | sudo tee -a "$password_file" > /dev/null

@@ -6,10 +6,7 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
-#Initialize variables for input file from the command line
 input_file=$1
-
-#Initialize variables for log files and password files
 log_file="/var/log/user_management.log"
 password_file="/var/secure/user_passwords.txt"
 
@@ -34,9 +31,22 @@ while IFS=';' read -r username groups; do
   if id "$username" &>/dev/null; then
     log "User $username already exists."
   else
-    # Create the user with a home directory and a personal group
+    # Create a personal group for the user
+    if getent group "$username" &>/dev/null; then
+      log "Group $username already exists."
+    else
+      sudo groupadd "$username"
+      log "Personal group $username created."
+    fi
+
+    # Create the user with a home directory
     sudo useradd -m -g "$username" "$username"
-    log "User $username and personal group $username created."
+    if [ $? -eq 0 ]; then
+      log "User $username created."
+    else
+      log "Failed to create user $username."
+      continue
+    fi
 
     # Set up home directory with appropriate permissions
     sudo chmod 700 "/home/$username"
@@ -46,7 +56,12 @@ while IFS=';' read -r username groups; do
     # Generate a random password and set it for the user
     password=$(generate_password)
     echo "$username:$password" | sudo chpasswd
-    log "Password for $username set."
+    if [ $? -eq 0 ]; then
+      log "Password for $username set."
+    else
+      log "Failed to set password for $username."
+      continue
+    fi
     
     # Store the password securely
     echo "$username:$password" | sudo tee -a "$password_file" > /dev/null
