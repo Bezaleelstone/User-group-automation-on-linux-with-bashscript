@@ -123,4 +123,4 @@ Run the script with the input file like this `./create_users.sh input.txt`
 
 This was a stage 1 DevOps Task at [HNG Internship](https://hng.tech/internship). You can check for available roles at [HNG Hire](https://hng.tech/hire).
 
-You can find entire code here: https://github.com/Bezaleelstone/bash-script-for-HNG-stage-1
+You can find entire code here: https://github.com/Bezaleelstone/User-group-automation-on-linux-with-bashscript.git
