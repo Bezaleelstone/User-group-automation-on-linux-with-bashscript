@@ -1,0 +1,3 @@
+alice;group1,group2
+bob;group2,group3
+charlie;group1,group3
